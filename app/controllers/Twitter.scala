@@ -1,4 +1,4 @@
-package contorllers
+package controllers
 
 import play.api._
 import play.api.libs.oauth._
@@ -9,6 +9,7 @@ object Twitter extends Controller {
   val API_KEY = Play.current.configuration.getString("twitter.api.key").get
   val API_SECRET = Play.current.configuration.getString("twitter.api.secret").get
   val KEY = ConsumerKey(API_KEY, API_SECRET)
+  val CALLBACK_URL = Play.current.configuration.getString("twitter.callback.url").get
 
   val TWITTER = OAuth(ServiceInfo(
     "https://api.twitter.com/oauth/request_token",
@@ -21,12 +22,12 @@ object Twitter extends Controller {
       val tokenPair = sessionTokenPair(request).get
       TWITTER.retrieveAccessToken(tokenPair, verifier) match {
         case Right(t) => {
-          Redirect(controllers.routes.Application.index).withSession("token" -> t.token, "secret" -> t.secret)
+          Redirect(routes.Analyze.analyze).withSession("token" -> t.token, "secret" -> t.secret)
         }
         case Left(e) => throw e
       }
     }.getOrElse(
-      TWITTER.retrieveRequestToken("http://localhost:9000/auth") match {
+      TWITTER.retrieveRequestToken(CALLBACK_URL) match {
         case Right(t) => {
           Redirect(TWITTER.redirectUrl(t.token)).withSession("token" -> t.token, "secret" -> t.secret)
         }
@@ -42,5 +43,4 @@ object Twitter extends Controller {
       RequestToken(token, secret)
     }
   }
-
 }

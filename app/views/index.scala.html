@@ -1,12 +1,14 @@
 @()
 
+@import controllers.routes
+
 @main("welcome") {
 <div>
   <h2>Behavior Scan</h2>
   <h3>- What color do you look like ? -</h3>
   <p> あなたのツイートから、心理状態をスキャンします<br>
     Scanningボタンを押すと、Twitterの認証画面が表示されます</p>
-  <button>Scanning</button>
+  <a href="@routes.Twitter.authenticate"><button>Scanning</button></a>
   <h5>&lt; this application is fanmade. &gt;</h5>
   <h4>README</h4>
   <ul>
@@ -32,7 +34,7 @@
     github Hiroka0619<br>
     souce <a href=""></a>
     weblog <a href="http://cerulean.hatenablog.com/">ルーズリーフ</a><br>
-    このアプリケーションに関する記事はこちら↓<br>
+    このアプリケーションに関する記事はこちら<br>
     <a href="http://cerulean.hatenablog.com/entry/2014/10/24/160025">発言から人物像のカラーリング</a><br>
   </p>
 </div>
