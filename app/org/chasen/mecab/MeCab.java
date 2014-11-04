@@ -9,7 +9,4 @@
 package org.chasen.mecab;
 
 public class MeCab implements MeCabConstants {
-    public class Mecab() {
-        
-    }
 }
