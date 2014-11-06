@@ -4,68 +4,87 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import org.chasen.mecab.MeCab
 import org.chasen.mecab.Tagger
 import org.chasen.mecab.Node
-import org.chasen.mecab.Model
 
 import play.api._
 import play.api.mvc._
 import play.api.Play.current
-import play.api.libs.ws._
+import play.api.libs.json._
 import play.api.libs.oauth._
+import play.api.libs.ws._
 
 object Analyze extends Controller {
 
-  def analyze = Action {
-    val color = analyzeColorFromTweets
-    Ok(color.toString)
-  }
+  val API_URL = Play.current
+                    .configuration
+                    .getString("twitter.api.url")
+                    .getOrElse("https://api.twitter.com/1.1/statuses/user_timeline.json")
+  val API_COUNT = Play.current.configuration.getString("twitter.api.count").getOrElse(1000)
 
-  def analyzeColorFromTweets: Int = {
-    //TODO get tweets
-    val colors = mutable.Map[Int, Int]()
-    //foreach
-    setColors(colors, analyzeColor(analyzeTweet("")))
-    //TODO make Color
-    val yourColor = 1
-    yourColor
-  }
-
-  def getTweet = Action.async { implicit request =>
+  def analyze = Action.async { implicit request =>
     Twitter.sessionTokenPair match {
       case Some(credentials) => {
-        WS.url("https://api.twitter.com/1.1/statuses/home_timeline.json?count=1")//TODO
-          .sign(OAuthCalculator(Twitter.KEY, credentials))
-          .get
-          .map(result => Ok(result.json))
-      }
-      case _ => Future.successful(Redirect(routes.Twitter.authenticate))
+          WS.url(API_URL + "?count=" + API_COUNT)
+            .sign(OAuthCalculator(Twitter.KEY, credentials))
+            .get
+            .map(res => analyzeColorFromTweets(res.json))
+        }
+      case _ => Future.successful(Redirect(routes.Application.authError))
     }
   }
 
-  def analyzeTweet(tweet: String): Node = {
-    try {
-      System.loadLibrary("MeCab")
-    } catch {
-      case e: UnsatisfiedLinkError => Logger.error("Not found libMeCab.so." + e)
-      case _: Throwable => Logger.error("unknown error.")
+  def analyzeColorFromTweets(json: JsValue): Result = {
+    val colors = mutable.Map[Int, Int]()
+    val scan = analyzeColor compose parseTweet
+    splitJson(json) foreach { tweet =>
+      setColors(colors, scan(tweet))
     }
+    val yourColor = makeColor(colors)
+    Ok(yourColor.toString)
+  }
+
+  def splitJson(json: JsValue): List[String] = {
+    val textList = mutable.ListBuffer[String]()
+    json \\ ("text") foreach { js => textList += js.toString }
+    textList.result
+  }
+
+  val parseTweet: String => Node = { tweet =>
     val tagger: Tagger = new Tagger()
     val node: Node = tagger.parseToNode(tweet)
-    Logger.debug("node " + node.getFeature() + ", " + node.getSurface())
     node
   }
 
-  def analyzeColor(node: Node): (Int, Int) = {
-    //TODO IMPL
-    (1, 1)
+  val analyzeColor: Node => Map[Int, Int] = { node =>
+    val nodeList = mutable.ListBuffer[Node]()
+    def pickup(word: Node): Unit = {
+      word.getFeature() match {
+        case w if w.contains("形容詞")
+                | w.contains("動詞")
+          => nodeList += word
+        case _ => //Nothing to do
+      }
+      if (word.getNext() ne null) pickup(word.getNext())
+    }
+    pickup(node)
+    nodeList foreach { n =>
+      Logger.debug(n.getSurface())//TODO 問い合わせクエリ作成
+    }
+    //TODO DB等問い合わせ、出現色返却
+    Map.apply(1 -> 1)
   }
 
-  def setColors(colors: mutable.Map[Int, Int], color: (Int, Int)) =
-    colors.get(color._1) match {
-      case some => colors.put(color._1, colors.getOrElse[Int](color._1, 0) + 1)
-      case none => colors.put(color._1, color._2)
+  def setColors(summary: mutable.Map[Int, Int], colors: Map[Int, Int]) = {
+    colors.keySet foreach { color =>
+      summary.contains(color) match {
+        case true => summary.put(color, summary.getOrElse[Int](color, 0) + colors.getOrElse(color, 0))
+        case false => summary.put(color, colors.getOrElse(color, 0))
+      }
     }
+  }
 
+  def makeColor(colors: mutable.Map[Int, Int]): Int = {
+    1
+  }
 }
