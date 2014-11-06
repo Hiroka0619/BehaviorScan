@@ -9,4 +9,8 @@ object Application extends Controller {
     Ok(views.html.index())
   }
 
+  def authError = Action {
+    Ok(views.html.error_auth())
+  }
+
 }

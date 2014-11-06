@@ -1,0 +1,13 @@
+@()
+
+@import controllers.routes
+
+@main("error") {
+<div>
+  <h2>Behavior Scan</h2>
+  <h3>- ERROR -</h3>
+  <p>Twitterの認証に失敗しました<br>
+    このアプリケーションを実行するには、TwitterアカウントおよびTwitter認証が必要です</p>
+  <a href="@routes.Application.index"><button>Back</button></a>
+</div>
+}
