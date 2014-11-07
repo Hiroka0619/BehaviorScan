@@ -5,7 +5,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import org.chasen.mecab.Tagger
-import org.chasen.mecab.Node
 
 import play.api._
 import play.api.mvc._
@@ -36,9 +35,8 @@ object Analyze extends Controller {
 
   def analyzeColorFromTweets(json: JsValue): Result = {
     val colors = mutable.Map[Int, Int]()
-    val scan = analyzeColor compose parseTweet
     splitJson(json) foreach { tweet =>
-      setColors(colors, scan(tweet))
+      setColors(colors, analyzeColor(tweet))
     }
     val yourColor = makeColor(colors)
     Ok(yourColor.toString)
@@ -50,29 +48,26 @@ object Analyze extends Controller {
     textList.result
   }
 
-  val parseTweet: String => Node = { tweet =>
-    val tagger: Tagger = new Tagger()
-    val node: Node = tagger.parseToNode(tweet)
-    node
-  }
-
-  val analyzeColor: Node => Map[Int, Int] = { node =>
-    val nodeList = mutable.ListBuffer[Node]()
-    def pickup(word: Node): Unit = {
-      word.getFeature() match {
-        case w if w.contains("形容詞")
-                | w.contains("動詞")
-          => nodeList += word
-        case _ => //Nothing to do
-      }
-      if (word.getNext() ne null) pickup(word.getNext())
-    }
-    pickup(node)
-    nodeList foreach { n =>
-      Logger.debug(n.getSurface())//TODO 問い合わせクエリ作成
+  def analyzeColor: String => Map[Int, Int] = { tweet =>
+    val tagger = new Tagger()
+    pickup(tagger.parse(tweet).lines) foreach { w =>
+      Logger.debug(w)//TODO 問い合わせクエリ作成
     }
     //TODO DB等問い合わせ、出現色返却
     Map.apply(1 -> 1)
+  }
+
+  val pickup: Iterator[String] => List[String] = { words =>
+    val targetWords =  mutable.ListBuffer[String]()
+    words foreach { word =>
+      word match {
+        case w if w.contains("形容詞")
+                | w.contains("動詞")
+          => targetWords += word.take(word.indexOf("\t"))//getSurface()
+        case _ => //Nothing to do
+      }
+    }
+    targetWords.result
   }
 
   def setColors(summary: mutable.Map[Int, Int], colors: Map[Int, Int]) = {

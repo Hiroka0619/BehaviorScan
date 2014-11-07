@@ -16,10 +16,9 @@ class AnalyzeColorSpec extends Specification {
 
   "AnalyzeColor" should {
 
-    "「好き」は「色」として判定されること" in new WithApplication {
+    "「好き」は「xxxx色」として判定されること" in new WithApplication {
       val tagger = new Tagger()
-      val testNode: String => Node = tagger.parseToNode(_)
-      val color = Analyze.analyzeColor(testNode("好き"))
+      val color = Analyze.analyzeColor("好き")
       color.get(1).get must beEqualTo (1)
     }
 

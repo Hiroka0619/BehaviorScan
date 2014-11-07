@@ -33,19 +33,12 @@ class AnalyzeTweetSpec extends Specification {
       resList.size must beEqualTo (10)
     }
     
-    "試験用JSONのtextが正しく取得でき、形態素解析が完了する" in new WithApplication {
+    "試験用JSONのtextが正しく取得できる" in new WithApplication {
       val resList = Analyze.splitJson(testJson)
       resList foreach { text =>
         text.length() must beGreaterThan(10)
       }
-      resList foreach { tweet =>
-        Analyze.parseTweet(tweet).getNext().getSurface() must be contain ("hoge")
-      }
       resList(0) must contain ("今日は社内SNS企画のオフ会で")
-    }
-    
-    "「暖かい」は形容詞である" in {
-      "" must beEqualTo ("")
     }
 
   }
