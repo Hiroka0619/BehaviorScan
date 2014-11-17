@@ -10,5 +10,9 @@ libraryDependencies ++= Seq(
   jdbc,
   anorm,
   cache,
-  ws
+  ws,
+  "org.scalikejdbc" %% "scalikejdbc"         % "2.2.+",
+  "com.h2database"  %  "h2"                  % "1.4.+",
+  "ch.qos.logback"  %  "logback-classic"     % "1.1.+",
+  "mysql"           % "mysql-connector-java" % "5.1.+"
 )
