@@ -57,6 +57,9 @@ object Analyze extends Controller {
     Map.apply(1 -> 1)
   }
 
+  /**
+   * 感情を示しそうな単語だけ
+   */
   val pickup: Iterator[String] => List[String] = { words =>
     val targetWords =  mutable.ListBuffer[String]()
     words foreach { word =>
@@ -70,6 +73,9 @@ object Analyze extends Controller {
     targetWords.result
   }
 
+  /**
+   * 
+   */
   def setColors(summary: mutable.Map[Int, Int], colors: Map[Int, Int]) = {
     colors.keySet foreach { color =>
       summary.contains(color) match {
@@ -80,6 +86,11 @@ object Analyze extends Controller {
   }
 
   def makeColor(colors: mutable.Map[Int, Int]): Int = {
+    /*
+     * 全単語全スコアを系統毎に合計し、100分率（小数点以下１位）で算出
+     * ＋/−/ニュートラル（中央値・原色）に寄せるの３パターン
+     * 
+    */
     1
   }
 }
